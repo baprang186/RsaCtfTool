@@ -16,7 +16,7 @@ this stuff is worth it, you can buy me a beer in return.
 
 from Crypto.PublicKey import RSA
 import signal
-import gmpy
+import gmpy2
 from libnum import *
 import requests
 import re
@@ -76,7 +76,7 @@ class RSAAttack(object):
             self.args = args
 
             if args.verbose:
-                print "[*] Multikey mode using keys: " + repr(self.pubkeyfilelist)
+                print("[*] Multikey mode using keys: ", repr(self.pubkeyfilelist))
 
             # Initialize a list of objects by recursively calling this on each key
             self.attackobjs = []
@@ -130,7 +130,7 @@ class RSAAttack(object):
                 return pow(eq[0],eq[1])-eq[2]
             except Exception as e:
                 if self.args.verbose:
-                    print "[*] FactorDB gave something we couldn't parse sorry (%s). Got error: %s" % (equation,e)
+                    print(f"[*] FactorDB trả về kết quả không thể xử lý: ({equation}). Lỗi: {e}")
                 raise FactorizationError()
 
         # Factors available online?
@@ -153,8 +153,8 @@ class RSAAttack(object):
             self.pub_key.q = int(key_q) if key_q.isdigit() else solveforp(key_q)
             if self.pub_key.p == self.pub_key.q == self.pub_key.n:
                 raise FactorizationError()
-            self.priv_key = PrivateKey(long(self.pub_key.p), long(self.pub_key.q),
-                                       long(self.pub_key.e), long(self.pub_key.n))
+            self.priv_key = PrivateKey(int(self.pub_key.p), int(self.pub_key.q),
+                                       int(self.pub_key.e), int(self.pub_key.n))
             return
         except Exception as e:
             return
@@ -165,7 +165,7 @@ class RSAAttack(object):
             from wiener_attack import WienerAttack
         except ImportError:
             if self.args.verbose:
-                print "[*] Warning: Wiener attack module missing (wiener_attack.py) or SymPy not installed?"
+                print("[*] Warning: Wiener attack module missing (wiener_attack.py) or SymPy not installed?")
             return
 
         # Wiener's attack
@@ -173,15 +173,15 @@ class RSAAttack(object):
         if wiener.p is not None and wiener.q is not None:
             self.pub_key.p = wiener.p
             self.pub_key.q = wiener.q
-            self.priv_key = PrivateKey(long(self.pub_key.p), long(self.pub_key.q),
-                                       long(self.pub_key.e), long(self.pub_key.n))
+            self.priv_key = PrivateKey(int(self.pub_key.p), int(self.pub_key.q),
+                                       int(self.pub_key.e), int(self.pub_key.n))
 
         return
 
     def ecm(self):
         # use elliptic curve method, may return a prime or may never return
         # only works if the sageworks() function returned True
-        print "[*] ECM Method can run forever and may never succeed. Hit Ctrl-C to bail out."
+        print("[*] ECM Method can run forever and may never succeed. Hit Ctrl-C to bail out.")
         if self.args.ecmdigits:
             sageresult = int(subprocess.check_output(['sage', 'ecm.sage', str(self.pub_key.n),str(self.args.ecmdigits)]))
         else:
@@ -190,8 +190,8 @@ class RSAAttack(object):
         if sageresult > 0:
             self.pub_key.p = sageresult
             self.pub_key.q = self.pub_key.n / self.pub_key.p
-            self.priv_key = PrivateKey(long(self.pub_key.p), long(self.pub_key.q),
-                                       long(self.pub_key.e), long(self.pub_key.n))
+            self.priv_key = PrivateKey(int(self.pub_key.p), int(self.pub_key.q),
+                                       int(self.pub_key.e), int(self.pub_key.n))
         return
 
     def boneh_durfee(self):
@@ -204,12 +204,12 @@ class RSAAttack(object):
         if sageresult > 0:
             # use PyCrypto _slowmath rsa_construct to resolve p and q from d
             from Crypto.PublicKey import _slowmath
-            tmp_priv = _slowmath.rsa_construct(long(self.pub_key.n), long(self.pub_key.e), d=long(sageresult))
+            tmp_priv = _slowmath.rsa_construct(int(self.pub_key.n), int(self.pub_key.e), d=int(sageresult))
 
             self.pub_key.p = tmp_priv.p
             self.pub_key.q = tmp_priv.q
-            self.priv_key = PrivateKey(long(self.pub_key.p), long(self.pub_key.q),
-                                       long(self.pub_key.e), long(self.pub_key.n))
+            self.priv_key = PrivateKey(int(self.pub_key.p), int(self.pub_key.q),
+                                       int(self.pub_key.e), int(self.pub_key.n))
 
         return
 
@@ -219,8 +219,8 @@ class RSAAttack(object):
             if self.pub_key.n % prime == 0:
                 self.pub_key.q = prime
                 self.pub_key.p = self.pub_key.n / self.pub_key.q
-                self.priv_key = PrivateKey(long(self.pub_key.p), long(self.pub_key.q),
-                                           long(self.pub_key.e), long(self.pub_key.n))
+                self.priv_key = PrivateKey(int(self.pub_key.p), int(self.pub_key.q),
+                                           int(self.pub_key.e), int(self.pub_key.n))
         return
 
     def smallfraction(self):
@@ -230,8 +230,8 @@ class RSAAttack(object):
         if sageresult > 0:
             self.pub_key.p = sageresult
             self.pub_key.q = self.pub_key.n / self.pub_key.p
-            self.priv_key = PrivateKey(long(self.pub_key.p), long(self.pub_key.q),
-                                       long(self.pub_key.e), long(self.pub_key.n))
+            self.priv_key = PrivateKey(int(self.pub_key.p), int(self.pub_key.q),
+                                       int(self.pub_key.e), int(self.pub_key.n))
         return
 
     def fermat(self, fermat_timeout=60):
@@ -241,7 +241,7 @@ class RSAAttack(object):
             from fermat import fermat
         except ImportError:
             if self.args.verbose:
-                print "[*] Warning: Fermat factorization module missing (fermat.py)"
+                print("[*] Warning: Fermat factorization module missing (fermat.py)")
             return
 
         try:
@@ -251,8 +251,8 @@ class RSAAttack(object):
             return
 
         if self.pub_key.q is not None:
-           self.priv_key = PrivateKey(long(self.pub_key.p), long(self.pub_key.q),
-                                      long(self.pub_key.e), long(self.pub_key.n))
+           self.priv_key = PrivateKey(int(self.pub_key.p), int(self.pub_key.q),
+                                      int(self.pub_key.e), int(self.pub_key.n))
 
         return
 
@@ -261,12 +261,12 @@ class RSAAttack(object):
         # not all numbers in this form are prime but some are (25 digit is prime)
         maxlen = 25 # max number of digits in the final integer
         for i in range(maxlen-4):
-            prime = long("3133" + ("3" * i) + "7")
+            prime = int("3133" + ("3" * i) + "7")
             if self.pub_key.n % prime == 0:
                 self.pub_key.q = prime
                 self.pub_key.p = self.pub_key.n / self.pub_key.q
-                self.priv_key = PrivateKey(long(self.pub_key.p), long(self.pub_key.q),
-                                           long(self.pub_key.e), long(self.pub_key.n))        
+                self.priv_key = PrivateKey(int(self.pub_key.p), int(self.pub_key.q),
+                                           int(self.pub_key.e), int(self.pub_key.n))        
         return
 
     def comfact_cn(self):
@@ -277,8 +277,8 @@ class RSAAttack(object):
             if commonfactor > 1:
                 self.pub_key.q = commonfactor
                 self.pub_key.p = self.pub_key.n / self.pub_key.q
-                self.priv_key = PrivateKey(long(self.pub_key.p), long(self.pub_key.q), 
-                                           long(self.pub_key.e), long(self.pub_key.n))
+                self.priv_key = PrivateKey(int(self.pub_key.p), int(self.pub_key.q), 
+                                           int(self.pub_key.e), int(self.pub_key.n))
 
                 unciphered = self.priv_key.decrypt(self.cipher)
 
@@ -288,21 +288,21 @@ class RSAAttack(object):
         # Try to find the gcd between each pair of modulii and resolve the private keys if gcd > 1
         for x in self.attackobjs:
             for y in self.attackobjs:
-                if x.pub_key.n <> y.pub_key.n:
+                if x.pub_key.n != y.pub_key.n:
                     g = gcd(x.pub_key.n, y.pub_key.n)
                     if g != 1:
                         if self.args.verbose and not x.displayed and not y.displayed:
-                            print "[*] Found common factor in modulus for " + x.pubkeyfile + " and " + y.pubkeyfile
+                            print("[*] Found common factor in modulus for ", x.pubkeyfile ," and ", y.pubkeyfile)
 
                         # update each attackobj with a private_key
                         x.pub_key.p = g
                         x.pub_key.q = x.pub_key.n / g
                         y.pub_key.p = g
                         y.pub_key.q = y.pub_key.n / g
-                        x.priv_key = PrivateKey(long(x.pub_key.p),long(x.pub_key.q),
-                                                long(x.pub_key.e), long(x.pub_key.n))
-                        y.priv_key = PrivateKey(long(y.pub_key.p), long(y.pub_key.q),
-                                                long(y.pub_key.e), long(y.pub_key.n))
+                        x.priv_key = PrivateKey(int(x.pub_key.p), int(x.pub_key.q),
+                                                int(x.pub_key.e), int(x.pub_key.n))
+                        y.priv_key = PrivateKey(int(y.pub_key.p), int(y.pub_key.q),
+                                                int(y.pub_key.e), int(y.pub_key.n))
 
                     # call attack method to print the private keys at the nullattack step or attack singularly
                     # depending on the success of the gcd operation
@@ -314,15 +314,15 @@ class RSAAttack(object):
     def pastctfprimes(self):
         path = os.path.dirname(os.path.abspath(__file__))
         pastctfprimes_path = os.path.join(path, 'pastctfprimes.txt')
-        primes = [long(x) for x in open(pastctfprimes_path,'r').readlines() if not x.startswith('#') and not x.startswith('\n')]
+        primes = [int(x) for x in open(pastctfprimes_path,'r').readlines() if not x.startswith('#') and not x.startswith('\n')]
         if self.args.verbose:
-            print "[*] Loaded " + str(len(primes)) + " primes"
+            print("[*] Loaded ", str(len(primes)) , " primes")
         for prime in primes:
             if self.pub_key.n % prime == 0:
                 self.pub_key.q = prime
                 self.pub_key.p = self.pub_key.n / self.pub_key.q
-                self.priv_key = PrivateKey(long(self.pub_key.p), long(self.pub_key.q),
-                                           long(self.pub_key.e), long(self.pub_key.n))        
+                self.priv_key = PrivateKey(int(self.pub_key.p), int(self.pub_key.q),
+                                           int(self.pub_key.e), int(self.pub_key.n))        
         return
 
     def commonmodulus(self):
@@ -341,11 +341,11 @@ class RSAAttack(object):
             from siqs import SiqsAttack
         except ImportError:
             if self.args.verbose:
-                print "[*] Warning: Yafu SIQS attack module missing (siqs.py)"
+                print("[*] Warning: Yafu SIQS attack module missing (siqs.py)")
             return
 
         if self.pub_key.n.bit_length() > 1024:
-            print "[*] Warning: Modulus too large for SIQS attack module"
+            print("[*] Warning: Modulus too large for SIQS attack module")
             return
     
 
@@ -357,8 +357,8 @@ class RSAAttack(object):
         if siqsobj.p and siqsobj.q:
             self.pub_key.q = siqsobj.q
             self.pub_key.p = siqsobj.p
-            self.priv_key = PrivateKey(long(self.pub_key.p), long(self.pub_key.q),
-                                       long(self.pub_key.e), long(self.pub_key.n))        
+            self.priv_key = PrivateKey(int(self.pub_key.p), int(self.pub_key.q),
+                                       int(self.pub_key.e), int(self.pub_key.n))        
     
         return
 
@@ -374,14 +374,14 @@ class RSAAttack(object):
             # loop through implemented attack methods and conduct attacks
             for attack in self.implemented_attacks:
                 if self.args.verbose and "nullattack" not in attack.__name__:
-                    print "[*] Performing " + attack.__name__ + " attack."
+                    print("[*] Performing ", attack.__name__ , " attack.")
 
                 getattr(self, attack.__name__)()
 
                 # check and print resulting private key
                 if self.priv_key is not None:
                     if self.args.private and not self.displayed:
-                        print self.priv_key
+                        print(self.priv_key)
                         self.displayed = True
                     break
 
@@ -391,12 +391,12 @@ class RSAAttack(object):
             # If we wanted to decrypt, do it now
             if self.args.uncipher is not None and self.priv_key is not None:
                     self.unciphered = self.priv_key.decrypt(self.cipher)
-                    print "[+] Clear text : %s" % self.unciphered
+                    print(f"[+] Clear text: {self.unciphered}")
             elif self.unciphered is not None:
-                    print "[+] Clear text : %s" % self.unciphered
+                    print(f"[+] Clear text: {self.unciphered}")
             else:
                 if self.args.uncipher is not None:
-                    print "[-] Sorry, cracking failed"
+                    print("[-] Sorry, cracking failed")
 
     implemented_attacks = [ nullattack, hastads, factordb, pastctfprimes, noveltyprimes, smallq, wiener, comfact_cn, fermat, siqs ]
 
@@ -439,8 +439,8 @@ if __name__ == "__main__":
     parser.add_argument('--verbose', help='verbose mode (display n, e, p and q)', action='store_true')
     parser.add_argument('--private', help='Display private key if recovered', action='store_true')
     parser.add_argument('--ecmdigits', type=int, help='Optionally an estimate as to how long one of the primes is for ECM method', default=None)
-    parser.add_argument('--n', type=long, help='Specify the modulus in --createpub mode.')
-    parser.add_argument('--e', type=long, help='Specify the public exponent in --createpub mode.')
+    parser.add_argument('--n', type=int, help='Specify the modulus in --createpub mode.')
+    parser.add_argument('--e', type=int, help='Specify the public exponent in --createpub mode.')
     parser.add_argument('--key', help='Specify the input key file in --dumpkey mode.')
 
     args = parser.parse_args()
@@ -449,7 +449,7 @@ if __name__ == "__main__":
     if args.createpub:
         if args.n is None or args.e is None:
             raise Exception("Specify both a modulus and exponent on the command line. See --help for info.")
-        print RSA.construct((args.n, args.e)).publickey().exportKey()
+        print(RSA.construct((args.n, args.e)).publickey().exportKey().decode('utf-8'))
         quit()
 
     # if dumpkey mode dump the key components then quit
@@ -459,12 +459,12 @@ if __name__ == "__main__":
 
         key_data = open(args.key,'rb').read() 
         key = RSA.importKey(key_data)
-        print "[*] n: " + str(key.n)
-        print "[*] e: " + str(key.e)
+        print("[*] n: ", str(key.n))
+        print("[*] e: ", str(key.e))
         if key.has_private():
-            print "[*] d: " + str(key.d)
-            print "[*] p: " + str(key.p)
-            print "[*] q: " + str(key.q)
+            print("[*] d: ", str(key.d))
+            print("[*] p: ", str(key.p)) 
+            print("[*] q: ", str(key.q))
         quit()
 
     if sageworks():
@@ -474,4 +474,3 @@ if __name__ == "__main__":
 
     attackobj = RSAAttack(args)
     attackobj.attack()
-
