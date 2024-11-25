@@ -113,7 +113,7 @@ class RSAAttack(object):
             orig = s2n(self.cipher)
             c = orig
             while True: 
-                m = gmpy.root(c, self.pub_key.e)[0]
+                m = gmpy2.root(c, self.pub_key.e)[0]
                 if pow(m, self.pub_key.e, self.pub_key.n) == orig:
                     self.unciphered = n2s(m)
                     break
