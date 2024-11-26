@@ -381,7 +381,7 @@ class RSAAttack(object):
                 # check and print resulting private key
                 if self.priv_key is not None:
                     if self.args.private and not self.displayed:
-                        print(self.priv_key.decode('utf-8'))
+                        print(self.priv_key)
                         self.displayed = True
                     break
 
