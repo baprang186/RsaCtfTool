@@ -66,7 +66,7 @@ class PrivateKey(object):
 
     def __str__(self):
         # Print armored private key
-        return self.key.exportKey()
+        return self.key.exportKey().decode('utf-8')
 
 class RSAAttack(object):
     def __init__(self, args):
