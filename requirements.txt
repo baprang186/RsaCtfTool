@@ -1,3 +1,5 @@
-PyCrypto
-gmpy
+pycryptodome
+libnum
+sympy
+gmpy2
 requests
